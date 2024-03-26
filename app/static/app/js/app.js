@@ -172,8 +172,7 @@ function loginFailed(message){
     alert(message);
 }
 
-function signUpSuccess(message){
-    alert(message);
+function signUpSuccess(){
     viewSignIn();
     validateSignIn();
 }
@@ -210,6 +209,7 @@ var validateSignUp = function(){
             }, 'Mật khẩu nhập lại chưa chính xác.')
         ],
         onSubmit: function(data){
+            
             loaddingElement.style.display = 'block';
             formCloseBtn.click();
 
@@ -226,7 +226,8 @@ var validateSignUp = function(){
                 loaddingElement.style.display = 'none';
                 if(data.success){
                     alert(data.success);
-                    verify();   // POST request to send an email verify
+                    signUpSuccess();
+                   // verify();   // POST request to send an email verify
                 } else {
                     signBtn.click();
                     formTrans[1].click();
@@ -238,51 +239,6 @@ var validateSignUp = function(){
                 alert(error);
             });
         }
-    });
-}
-
-// Verify account registration code
-function verify(){
-    signBtn.click();
-    formLayer.innerHTML = formVerifyHtml;
-    formNav.style.display = 'none';
-
-    var submitVerify = formMain.querySelector('.form__verify .form__verify-submit');
-    var cancelVerify = formMain.querySelector('.form__verify .form__verify-cancel');
-
-    // POST request verify_code
-    submitVerify.addEventListener('click', function(){
-        var dataVerify = {};
-        var inputElement = document.querySelector('#form-main input[name="verify_code"]');
-        dataVerify[inputElement.name] = inputElement.value;
-        loaddingElement.style.display = 'block';
-
-        fetch('/verify/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify(dataVerify),
-        })
-        .then(reponse => reponse.json())
-        .then(data => {
-            loaddingElement.style.display = 'none';
-            if(data.success){
-                signUpSuccess(data.success);
-            } else {
-                signUpFailed(data.error);
-            }
-        })
-        .catch((error) => {
-            loaddingElement.style.display = 'none';
-            alert(error);
-        })
-    });
-
-    cancelVerify.addEventListener('click', function(){
-        viewSignUp();
-        validateSignUp();
     });
 }
 

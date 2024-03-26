@@ -332,61 +332,14 @@ def register(request):
         if User.objects.filter(email=data['email']).exists():
             return JsonResponse({'error': 'Email này đã được đăng ký cho một tài khoản khác, vui lòng sử dụng một email khác.'})
         
-        verifyCode = ''.join(random.choices('0123456789', k=6)) # Create a random code
-        senderEmail = 'dcthoai1023@gmail.com'
-        senderPassword = 'nyitsxfirfuskyat'
-        receiverEmail = data['email']
+        user = User.objects.create_user(
+            username=data['username'],
+            email=data['email'],
+            password=data['password']
+        )
+        user.save()
 
-        message = MIMEMultipart()
-        message['From'] = 'ABC Book'
-        message['To'] = receiverEmail
-        message['Subject'] = 'Mã xác thực tài khoản của bạn'
-
-        content = f'Nhập mã này để hoàn tất đăng ký tài khoản của bạn: {verifyCode}. Mã này có hiệu lực trong vòng 3 phút.'
-        message.attach(MIMEText(content, 'plain'))
-
-        session = smtplib.SMTP('smtp.gmail.com', 587)  # Used gmail with port 587
-        session.starttls()
-        session.login(senderEmail, senderPassword)
-        session.sendmail(senderEmail, receiverEmail, message.as_string())
-        session.quit()
-
-        # Save the user data and verification code in session
-        request.session['user_data'] = data
-        request.session['verify_code'] = verifyCode
-        request.session['code_time'] = datetime.datetime.now().timestamp()
-
-        return JsonResponse({'success': 'Mã xác thực đã được gửi, vui lòng kiểm tra email. Mã này có hiệu lực trong vòng 3 phút.'}, status=200)
-    else:
-        return JsonResponse({'error': 'Gửi yêu cầu thất bại, vui lòng thử lại sau.'}, status=400)
-
-def verify(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        if 'verify_code' in request.session and data['verify_code'] == request.session['verify_code']:
-            # Check if the code has expired
-            if datetime.datetime.now().timestamp() - request.session['code_time'] > EXPIRATION_TIME:
-                del request.session['user_data']
-                del request.session['verify_code']
-                del request.session['code_time']
-                return JsonResponse({'error': 'Mã xác nhận này đã hết hạn.'}, status=400)
-
-            user_data = request.session['user_data']
-            user = User.objects.create_user(
-                username=user_data['username'],
-                email=user_data['email'],
-                password=user_data['password']
-            )
-            user.save()
-
-            # Delete the user data and verification code from session
-            del request.session['user_data']
-            del request.session['verify_code']
-            del request.session['code_time']
-
-            return JsonResponse({'success': 'Tạo tài khoản thành công.'}, status=201)
-        else:
-            return JsonResponse({'error': 'Mã xác nhận không hợp lệ.'}, status=400)
+        return JsonResponse({'success': 'Đăng ký thành công'}, status=200)
     else:
         return JsonResponse({'error': 'Gửi yêu cầu thất bại, vui lòng thử lại sau.'}, status=400)
 
